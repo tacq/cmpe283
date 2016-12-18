@@ -8,8 +8,8 @@
  * Copyright 2010 Red Hat, Inc. and/or its affiliates.
  *
  * Authors:
- *   Avi Kivity   <avi@qumranet.com>
- *   Yaniv Kamay  <yaniv@qumranet.com>
+ *   Avi Kivity   <renlong.zhang@sjsu.edu>
+ *   Yaniv Kamay  <fangjia.li@sjsu.edu>
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -61,11 +61,10 @@ MODULE_LICENSE("GPL");
 
 #define MAX_VM_COUNT 8
 
-//Custom Kernel code by Shubham Vadhera - start
-
 // v cpu count
 static int v_cpuid[MAX_VM_COUNT] = {0};
 static ktime_t exit_time;
+static ktime_t enter_time;
 
 // ext exception ====
 static int vmextcntr_exception_nmi = 0;
@@ -248,8 +247,8 @@ static int vmextcntr_pcommits[MAX_VM_COUNT] = {0};
 
 // count exception for each v cpu
 static int my_handle_exit(int *count_array,struct kvm_vcpu *vcpu) {
-    
-    for (int i = 0; i < MAX_VM_COUNT; i++) {
+    int i;
+    for (i = 0; i < MAX_VM_COUNT; i++) {
         if(v_cpuid[i] == vcpu->vcpu_id) {
             count_array[i]++;
             break;
@@ -266,7 +265,7 @@ static int my_handle_exit(int *count_array,struct kvm_vcpu *vcpu) {
 }
 
 
-//Custom Kernel code by Shubham Vadhera - end
+
 
 static const struct x86_cpu_id vmx_cpu_id[] = {
     X86_FEATURE_MATCH(X86_FEATURE_VMX),
@@ -5490,12 +5489,11 @@ static void kvm_machine_check(void)
 
 static int handle_machine_check(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_mce_during_vmentry++;
     my_handle_exit(vmextcntr_mce_during_vmentrys, vcpu);
     //printk("\nVMEXTCNT_MCE_DURING_VMENTRY:");
     //printk("%d",vmextcntr_mce_during_vmentry);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     /* already handled by vcpu_run */
     return 1;
@@ -5504,14 +5502,13 @@ static int handle_machine_check(struct kvm_vcpu *vcpu)
 
 static int handle_exception(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_exception_nmi++;
     
     my_handle_exit(vmextcntr_exception_nmis, vcpu);
     
     //printk("\nVMEXTCNT_EXCEPTION_NMI:");
     //printk("%d",vmextcntr_exception_nmi);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     struct vcpu_vmx *vmx = to_vmx(vcpu);
     struct kvm_run *kvm_run = vcpu->run;
@@ -5624,13 +5621,12 @@ static int handle_exception(struct kvm_vcpu *vcpu)
 
 static int handle_external_interrupt(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_external_interrupt++;
     
     my_handle_exit(vmextcntr_external_interrupts, vcpu);
     //printk("\nVMEXTCNT_EXTERNAL_INTERRUPT:");
     //printk("%d",vmextcntr_external_interrupt);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     ++vcpu->stat.irq_exits;
     return 1;
@@ -5638,12 +5634,11 @@ static int handle_external_interrupt(struct kvm_vcpu *vcpu)
 
 static int handle_triple_fault(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_triple_fault++;
     my_handle_exit(vmextcntr_triple_faults, vcpu);
     //printk("\nVMEXTCNT_TRIPLE_FAULT:");
     //printk("%d",vmextcntr_triple_fault);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     vcpu->run->exit_reason = KVM_EXIT_SHUTDOWN;
     return 0;
@@ -5651,13 +5646,12 @@ static int handle_triple_fault(struct kvm_vcpu *vcpu)
 
 static int handle_io(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_io_instruction++;
     
     my_handle_exit(vmextcntr_io_instructions, vcpu);
     //printk("\nVMEXTCNT_IO_INSTRUCTION:");
     //printk("%d",vmextcntr_io_instruction);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long exit_qualification;
     int size, in, string;
@@ -5770,12 +5764,11 @@ static void handle_clts(struct kvm_vcpu *vcpu)
 
 static int handle_cr(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_cr_access++;
     my_handle_exit(vmextcntr_cr_accesss, vcpu);
     //printk("\nVMEXTCNT_CR_ACCESS:");
     //printk("%d",vmextcntr_cr_access);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long exit_qualification, val;
     int cr;
@@ -5856,12 +5849,11 @@ static int handle_cr(struct kvm_vcpu *vcpu)
 
 static int handle_dr(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_dr_access++;
     my_handle_exit(vmextcntr_dr_accesss, vcpu);
     //printk("\nVMEXTCNT_DR_ACCESS:");
     //printk("%d",vmextcntr_dr_access);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long exit_qualification;
     int dr, dr7, reg;
@@ -5963,12 +5955,11 @@ static void vmx_set_dr7(struct kvm_vcpu *vcpu, unsigned long val)
 
 static int handle_cpuid(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_cpuid++;
     my_handle_exit(vmextcntr_cpuids, vcpu);
     //printk("\nVMEXTCNT_CPUID:");
     //printk("%d",vmextcntr_cpuid);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     kvm_emulate_cpuid(vcpu);
     return 1;
@@ -5976,12 +5967,11 @@ static int handle_cpuid(struct kvm_vcpu *vcpu)
 
 static int handle_rdmsr(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_msr_read++;
     my_handle_exit(vmextcntr_msr_reads, vcpu);
     //printk("\nVMEXTCNT_MSR_READ:");
     //printk("%d",vmextcntr_msr_read);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     u32 ecx = vcpu->arch.regs[VCPU_REGS_RCX];
     struct msr_data msr_info;
@@ -6005,12 +5995,11 @@ static int handle_rdmsr(struct kvm_vcpu *vcpu)
 
 static int handle_wrmsr(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_msr_write++;
     my_handle_exit(vmextcntr_msr_writes,vcpu);
     //printk("\nVMEXTCNT_MSR_WRITE:");
     //printk("%d",vmextcntr_msr_write);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     struct msr_data msr;
     u32 ecx = vcpu->arch.regs[VCPU_REGS_RCX];
@@ -6033,12 +6022,11 @@ static int handle_wrmsr(struct kvm_vcpu *vcpu)
 
 static int handle_tpr_below_threshold(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_tpr_below_threshold++;
     my_handle_exit(vmextcntr_tpr_below_thresholds,vcpu);
     //printk("\nVMEXTCNT_TPR_BELOW_THRESHOLD:");
     //printk("%d",vmextcntr_tpr_below_threshold);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     kvm_make_request(KVM_REQ_EVENT, vcpu);
     return 1;
@@ -6046,12 +6034,11 @@ static int handle_tpr_below_threshold(struct kvm_vcpu *vcpu)
 
 static int handle_interrupt_window(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_pending_interrupt++;
     my_handle_exit(vmextcntr_pending_interrupts, vcpu);
     //printk("\nVMEXTCNT_PENDING_INTERRUPT:");
     //printk("%d",vmextcntr_pending_interrupt);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     u32 cpu_based_vm_exec_control;
     
@@ -6068,24 +6055,22 @@ static int handle_interrupt_window(struct kvm_vcpu *vcpu)
 
 static int handle_halt(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_hlt++;
     my_handle_exit(vmextcntr_hlts,vcpu);
     //printk("\nVMEXTCNT_HLT:");
     //printk("%d",vmextcntr_hlt);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     return kvm_emulate_halt(vcpu);
 }
 
 static int handle_vmcall(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_vmcall++;
     my_handle_exit(vmextcntr_vmcalls, vcpu);
     //printk("\nVMEXTCNT_VMCALL:");
     //printk("%d",vmextcntr_vmcall);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     kvm_emulate_hypercall(vcpu);
     return 1;
@@ -6093,24 +6078,22 @@ static int handle_vmcall(struct kvm_vcpu *vcpu)
 
 static int handle_invd(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_invd++;
     my_handle_exit(vmextcntr_invds, vcpu);
     //printk("\nVMEXTCNT_INVD:");
     //printk("%d",vmextcntr_invd);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     return emulate_instruction(vcpu, 0) == EMULATE_DONE;
 }
 
 static int handle_invlpg(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_invlpg++;
     my_handle_exit(vmextcntr_invlpgs, vcpu);
     //printk("\nVMEXTCNT_INVLPG:");
     //printk("%d",vmextcntr_invlpg);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long exit_qualification = vmcs_readl(EXIT_QUALIFICATION);
     
@@ -6121,12 +6104,11 @@ static int handle_invlpg(struct kvm_vcpu *vcpu)
 
 static int handle_rdpmc(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_rdpmc++;
     my_handle_exit(vmextcntr_rdpmcs, vcpu);
     //printk("\nVMEXTCNT_RDPMC:");
     //printk("%d",vmextcntr_rdpmc);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     int err;
     
@@ -6138,12 +6120,11 @@ static int handle_rdpmc(struct kvm_vcpu *vcpu)
 
 static int handle_wbinvd(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_wbinvd++;
     my_handle_exit(vmextcntr_wbinvds, vcpu);
     //printk("\nVMEXTCNT_WBINVD:");
     //printk("%d",vmextcntr_wbinvd);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     kvm_emulate_wbinvd(vcpu);
     return 1;
@@ -6151,12 +6132,11 @@ static int handle_wbinvd(struct kvm_vcpu *vcpu)
 
 static int handle_xsetbv(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_xsetbv++;
     my_handle_exit(vmextcntr_xsetbvs, vcpu);
     //printk("\nVMEXTCNT_XSETBV:");
     //printk("%d",vmextcntr_xsetbv);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     u64 new_bv = kvm_read_edx_eax(vcpu);
     u32 index = kvm_register_read(vcpu, VCPU_REGS_RCX);
@@ -6168,12 +6148,11 @@ static int handle_xsetbv(struct kvm_vcpu *vcpu)
 
 static int handle_xsaves(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_xsaves++;
     my_handle_exit(vmextcntr_xsavess, vcpu);
     //printk("\nVMEXTCNT_XSAVES:");
     //printk("%d",vmextcntr_xsaves);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     skip_emulated_instruction(vcpu);
     WARN(1, "this should never happen\n");
@@ -6182,12 +6161,11 @@ static int handle_xsaves(struct kvm_vcpu *vcpu)
 
 static int handle_xrstors(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_xrstors++;
     my_handle_exit(vmextcntr_xrstorss, vcpu);
     //printk("\nVMEXTCNT_XRSTORS:");
     //printk("%d",vmextcntr_xrstors);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     skip_emulated_instruction(vcpu);
     WARN(1, "this should never happen\n");
@@ -6196,12 +6174,11 @@ static int handle_xrstors(struct kvm_vcpu *vcpu)
 
 static int handle_apic_access(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_apic_access++;
     my_handle_exit(vmextcntr_apic_accesss, vcpu);
     //printk("\nVMEXTCNT_APIC_ACCESS:");
     //printk("%d",vmextcntr_apic_access);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     if (likely(fasteoi)) {
         unsigned long exit_qualification = vmcs_readl(EXIT_QUALIFICATION);
@@ -6226,12 +6203,11 @@ static int handle_apic_access(struct kvm_vcpu *vcpu)
 
 static int handle_apic_eoi_induced(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_eoi_induced++;
     my_handle_exit(vmextcntr_eoi_induceds, vcpu);
     //printk("\nVMEXTCNT_EOI_INDUCED:");
     //printk("%d",vmextcntr_eoi_induced);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long exit_qualification = vmcs_readl(EXIT_QUALIFICATION);
     int vector = exit_qualification & 0xff;
@@ -6243,12 +6219,11 @@ static int handle_apic_eoi_induced(struct kvm_vcpu *vcpu)
 
 static int handle_apic_write(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_apic_write++;
     my_handle_exit(vmextcntr_apic_writes, vcpu);
     //printk("\nVMEXTCNT_APIC_WRITE:");
     //printk("%d",vmextcntr_apic_write);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long exit_qualification = vmcs_readl(EXIT_QUALIFICATION);
     u32 offset = exit_qualification & 0xfff;
@@ -6260,12 +6235,11 @@ static int handle_apic_write(struct kvm_vcpu *vcpu)
 
 static int handle_task_switch(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_task_switch++;
     my_handle_exit(vmextcntr_task_switchs, vcpu);
     //printk("\nVMEXTCNT_TASK_SWITCH:");
     //printk("%d",vmextcntr_task_switch);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     struct vcpu_vmx *vmx = to_vmx(vcpu);
     unsigned long exit_qualification;
@@ -6332,12 +6306,11 @@ static int handle_task_switch(struct kvm_vcpu *vcpu)
 
 static int handle_ept_violation(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_ept_violation++;
     my_handle_exit(vmextcntr_ept_violations, vcpu);
     //printk("\nVMEXTCNT_EPT_VIOLATION:");
     //printk("%d",vmextcntr_ept_violation);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long exit_qualification;
     gpa_t gpa;
@@ -6387,12 +6360,11 @@ static int handle_ept_violation(struct kvm_vcpu *vcpu)
 
 static int handle_ept_misconfig(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_ept_misconfig++;
     my_handle_exit(vmextcntr_ept_misconfigs, vcpu);
     //printk("\nVMEXTCNT_EPT_MISCONFIG:");
     //printk("%d",vmextcntr_ept_misconfig);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     int ret;
     gpa_t gpa;
@@ -6426,13 +6398,12 @@ static int handle_ept_misconfig(struct kvm_vcpu *vcpu)
 
 static int handle_nmi_window(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_nmi_window++;
     
     my_handle_exit(vmextcntr_nmi_windows, vcpu);
     //printk("\nVMEXTCNT_NMI_WINDOW:");
     //printk("%d",vmextcntr_nmi_window);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     u32 cpu_based_vm_exec_control;
     
@@ -6817,12 +6788,11 @@ static __exit void hardware_unsetup(void)
  */
 static int handle_pause(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_pause_instruction++;
     my_handle_exit(vmextcntr_pause_instructions, vcpu);
     //printk("\nVMEXTCNT_PAUSE_INSTRUCTION:");
     //printk("%d",vmextcntr_pause_instruction);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     if (ple_gap)
         grow_ple_window(vcpu);
@@ -6841,12 +6811,11 @@ static int handle_nop(struct kvm_vcpu *vcpu)
 
 static int handle_mwait(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_mwait_instruction++;
     my_handle_exit(vmextcntr_mwait_instructions, vcpu);
     //printk("\nVMEXTCNT_MWAIT_INSTRUCTION:");
     //printk("%d",vmextcntr_mwait_instruction);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     printk_once(KERN_WARNING "kvm: MWAIT instruction emulated as NOP!\n");
     return handle_nop(vcpu);
@@ -6854,24 +6823,22 @@ static int handle_mwait(struct kvm_vcpu *vcpu)
 
 static int handle_monitor_trap(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_monitor_trap_flag++;
     my_handle_exit(vmextcntr_monitor_trap_flags, vcpu);
     //printk("\nVMEXTCNT_MONITOR_TRAP_FLAG:");
     //printk("%d",vmextcntr_monitor_trap_flag);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     return 1;
 }
 
 static int handle_monitor(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_monitor_instruction++;
     my_handle_exit(vmextcntr_monitor_instructions, vcpu);
     //printk("\nVMEXTCNT_MONITOR_INSTRUCTION:");
     //printk("%d",vmextcntr_monitor_instruction);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     printk_once(KERN_WARNING "kvm: MONITOR instruction emulated as NOP!\n");
     return handle_nop(vcpu);
@@ -7228,12 +7195,11 @@ static int nested_vmx_check_vmptr(struct kvm_vcpu *vcpu, int exit_reason,
  */
 static int handle_vmon(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_vmon++;
     my_handle_exit(vmextcntr_vmons, vcpu);
     //printk("\nVMEXTCNT_VMON:");
     //printk("%d",vmextcntr_vmon);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     struct kvm_segment cs;
     struct vcpu_vmx *vmx = to_vmx(vcpu);
@@ -7395,12 +7361,11 @@ static void free_nested(struct vcpu_vmx *vmx)
 /* Emulate the VMXOFF instruction */
 static int handle_vmoff(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_vmoff++;
     my_handle_exit(vmextcntr_vmoffs, vcpu);
     //printk("\nVMEXTCNT_VMOFF:");
     //printk("%d",vmextcntr_vmoff);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     if (!nested_vmx_check_permission(vcpu))
         return 1;
@@ -7413,12 +7378,11 @@ static int handle_vmoff(struct kvm_vcpu *vcpu)
 /* Emulate the VMCLEAR instruction */
 static int handle_vmclear(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_vmclear++;
     my_handle_exit(vmextcntr_vmclears, vcpu);
     //printk("\nVMEXTCNT_VMCLEAR:");
     //printk("%d",vmextcntr_vmclear);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     struct vcpu_vmx *vmx = to_vmx(vcpu);
     gpa_t vmptr;
@@ -7463,12 +7427,11 @@ static int nested_vmx_run(struct kvm_vcpu *vcpu, bool launch);
 /* Emulate the VMLAUNCH instruction */
 static int handle_vmlaunch(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_vmlaunch++;
     my_handle_exit(vmextcntr_vmlaunchs, vcpu);
     //printk("\nVMEXTCNT_VMLAUNCH:");
     //printk("%d",vmextcntr_vmlaunch);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     return nested_vmx_run(vcpu, true);
 }
@@ -7476,12 +7439,11 @@ static int handle_vmlaunch(struct kvm_vcpu *vcpu)
 /* Emulate the VMRESUME instruction */
 static int handle_vmresume(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_vmresume++;
     my_handle_exit(vmextcntr_vmresumes,vcpu);
     //printk("\nVMEXTCNT_VMRESUME:");
     //printk("%d",vmextcntr_vmresume);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     return nested_vmx_run(vcpu, false);
 }
@@ -7674,12 +7636,11 @@ static int nested_vmx_check_vmcs12(struct kvm_vcpu *vcpu)
 
 static int handle_vmread(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_vmread++;
     my_handle_exit(vmextcntr_vmreads, vcpu);
     //printk("\nVMEXTCNT_VMREAD:");
     //printk("%d",vmextcntr_vmread);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long field;
     u64 field_value;
@@ -7724,12 +7685,11 @@ static int handle_vmread(struct kvm_vcpu *vcpu)
 
 static int handle_vmwrite(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_vmwrite++;
     my_handle_exit(vmextcntr_vmwrites, vcpu);
     //printk("\nVMEXTCNT_VMWRITE:");
     //printk("%d",vmextcntr_vmwrite);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long field;
     gva_t gva;
@@ -7785,12 +7745,11 @@ static int handle_vmwrite(struct kvm_vcpu *vcpu)
 /* Emulate the VMPTRLD instruction */
 static int handle_vmptrld(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_vmptrld++;
     my_handle_exit(vmextcntr_vmptrlds, vcpu);
     //printk("\nVMEXTCNT_VMPTRLD:");
     //printk("%d",vmextcntr_vmptrld);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     struct vcpu_vmx *vmx = to_vmx(vcpu);
     gpa_t vmptr;
@@ -7841,12 +7800,11 @@ static int handle_vmptrld(struct kvm_vcpu *vcpu)
 /* Emulate the VMPTRST instruction */
 static int handle_vmptrst(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_vmptrst++;
     my_handle_exit(vmextcntr_vmptrsts, vcpu);
     //printk("\nVMEXTCNT_VMPTRST:");
     //printk("%d",vmextcntr_vmptrst);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long exit_qualification = vmcs_readl(EXIT_QUALIFICATION);
     u32 vmx_instruction_info = vmcs_read32(VMX_INSTRUCTION_INFO);
@@ -7874,12 +7832,11 @@ static int handle_vmptrst(struct kvm_vcpu *vcpu)
 /* Emulate the INVEPT instruction */
 static int handle_invept(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_invept++;
     my_handle_exit(vmextcntr_invepts, vcpu);
     //printk("\nVMEXTCNT_INVEPT:");
     //printk("%d",vmextcntr_invept);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     struct vcpu_vmx *vmx = to_vmx(vcpu);
     u32 vmx_instruction_info, types;
@@ -7947,12 +7904,11 @@ static int handle_invept(struct kvm_vcpu *vcpu)
 
 static int handle_invvpid(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_invvpid++;
     my_handle_exit(vmextcntr_invvpids, vcpu);
     //printk("\nVMEXTCNT_INVVPID:");
     //printk("%d",vmextcntr_invvpid);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     struct vcpu_vmx *vmx = to_vmx(vcpu);
     u32 vmx_instruction_info;
@@ -8017,12 +7973,11 @@ static int handle_invvpid(struct kvm_vcpu *vcpu)
 
 static int handle_pml_full(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_pml_full++;
     my_handle_exit(vmextcntr_pml_fulls, vcpu);
     //printk("\nVMEXTCNT_PML_FULL:");
     //printk("%d",vmextcntr_pml_full);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     unsigned long exit_qualification;
     
@@ -8049,12 +8004,11 @@ static int handle_pml_full(struct kvm_vcpu *vcpu)
 
 static int handle_pcommit(struct kvm_vcpu *vcpu)
 {
-    //Custom Kernel code by Shubham Vadhera - start
     vmextcntr_pcommit++;
     my_handle_exit(vmextcntr_pcommits, vcpu);
     //printk("\nVMEXTCNT_PCOMMIT:");
     //printk("%d",vmextcntr_pcommit);
-    //Custom Kernel code by Shubham Vadhera - end
+    
     
     /* we never catch pcommit instruct for L1 guest. */
     WARN_ON(1);
@@ -9117,8 +9071,10 @@ static void __noclone vmx_vcpu_run(struct kvm_vcpu *vcpu)
     unsigned long debugctlmsr, cr4;
     
     /* Record the guest's net vcpu time for enforced NMI injections. */
-    if (unlikely(!cpu_has_virtual_nmis() && vmx->soft_vnmi_blocked))
+    if (unlikely(!cpu_has_virtual_nmis() && vmx->soft_vnmi_blocked)){
         vmx->entry_time = ktime_get();
+        enter_time = ktime_get();
+    }
     
     /* Don't enter VMX if guest state is invalid, let the exit handler
      start emulation until we arrive back to a valid state */
@@ -11553,7 +11509,7 @@ EXPORT_SYMBOL(vmextcntr_xsaves);
 EXPORT_SYMBOL(vmextcntr_xrstors);
 EXPORT_SYMBOL(vmextcntr_pml_full);
 EXPORT_SYMBOL(vmextcntr_pcommit);
-//Custom Kernel code by Shubham Vadhera - end
+
 
 EXPORT_SYMBOL(vmextcntr_exception_nmis);
 EXPORT_SYMBOL(vmextcntr_external_interrupts);
@@ -11602,7 +11558,7 @@ EXPORT_SYMBOL(vmextcntr_pml_fulls);
 EXPORT_SYMBOL(vmextcntr_pcommits);
 EXPORT_SYMBOL(v_cpuid);
 EXPORT_SYMBOL(exit_time);
-EXPORT_SYMBOL(entry_time);
+EXPORT_SYMBOL(enter_time);
 
 
 module_init(vmx_init)
