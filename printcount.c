@@ -1,6 +1,8 @@
 #include <linux/module.h>	/* Needed by all modules */
 #include <linux/kernel.h>	/* Needed for KERN_INFO */
 
+#define MAX_VM_COUNT 8
+
 extern int vmextcntr_exception_nmi;
 extern int vmextcntr_external_interrupt;
 extern int vmextcntr_triple_fault;
@@ -47,9 +49,124 @@ extern int vmextcntr_xrstors;
 extern int vmextcntr_pml_full;
 extern int vmextcntr_pcommit;
 
+
+// ============
+
+extern int vmextcntr_exception_nmis[MAX_VM_COUNT];
+extern int vmextcntr_external_interrupts[MAX_VM_COUNT];
+extern int vmextcntr_triple_faults[MAX_VM_COUNT];
+extern int vmextcntr_nmi_windows[MAX_VM_COUNT];
+extern int vmextcntr_io_instructions[MAX_VM_COUNT];
+extern int vmextcntr_cr_accesss[MAX_VM_COUNT];
+extern int vmextcntr_dr_accesss[MAX_VM_COUNT];
+extern int vmextcntr_cpuids[MAX_VM_COUNT];
+extern int vmextcntr_msr_reads[MAX_VM_COUNT];
+extern int vmextcntr_msr_writes[MAX_VM_COUNT];
+extern int vmextcntr_pending_interrupts[MAX_VM_COUNT];
+extern int vmextcntr_hlts[MAX_VM_COUNT];
+extern int vmextcntr_invds[MAX_VM_COUNT];
+extern int vmextcntr_invlpgs[MAX_VM_COUNT];
+extern int vmextcntr_rdpmcs[MAX_VM_COUNT];
+extern int vmextcntr_vmcalls[MAX_VM_COUNT];
+extern int vmextcntr_vmclears[MAX_VM_COUNT];
+extern int vmextcntr_vmlaunchs[MAX_VM_COUNT];
+extern int vmextcntr_vmptrlds[MAX_VM_COUNT];
+extern int vmextcntr_vmptrsts[MAX_VM_COUNT];
+extern int vmextcntr_vmreads[MAX_VM_COUNT];
+extern int vmextcntr_vmresumes[MAX_VM_COUNT];
+extern int vmextcntr_vmwrites[MAX_VM_COUNT];
+extern int vmextcntr_vmoffs[MAX_VM_COUNT];
+extern int vmextcntr_vmons[MAX_VM_COUNT];
+extern int vmextcntr_tpr_below_thresholds[MAX_VM_COUNT];
+extern int vmextcntr_apic_accesss[MAX_VM_COUNT];
+extern int vmextcntr_apic_writes[MAX_VM_COUNT];
+extern int vmextcntr_eoi_induceds[MAX_VM_COUNT];
+extern int vmextcntr_wbinvds[MAX_VM_COUNT];
+extern int vmextcntr_xsetbvs[MAX_VM_COUNT];
+extern int vmextcntr_task_switchs[MAX_VM_COUNT];
+extern int vmextcntr_mce_during_vmentrys[MAX_VM_COUNT];
+extern int vmextcntr_ept_violations[MAX_VM_COUNT];
+extern int vmextcntr_ept_misconfigs[MAX_VM_COUNT];
+extern int vmextcntr_pause_instructions[MAX_VM_COUNT];
+extern int vmextcntr_mwait_instructions[MAX_VM_COUNT];
+extern int vmextcntr_monitor_trap_flags[MAX_VM_COUNT];
+extern int vmextcntr_monitor_instructions[MAX_VM_COUNT];
+extern int vmextcntr_invepts[MAX_VM_COUNT];
+extern int vmextcntr_invvpids[MAX_VM_COUNT];
+extern int vmextcntr_xsavess[MAX_VM_COUNT];
+extern int vmextcntr_xrstorss[MAX_VM_COUNT];
+extern int vmextcntr_pml_fulls[MAX_VM_COUNT];
+extern int vmextcntr_pcommits[MAX_VM_COUNT];
+
+extern int v_cpuid[MAX_VM_COUNT];
+extern ktime_t enter_time;
+extern ktime_t exit_time;
+
 int init_module(void)
 {
+    
+    // ===
+    printk("\nEntry time is: %d", enter_time );
+    printk("\nExit time is: %d", exit_time );
+    
+    // at least you need start a VM
+    printk("\n Active CPU Id: %d", v_cpuid[0]);
+    for(int i = 1; i < MAX_VM_COUNT; i++) {
+        
+        if(v_cpuid[i] == 0 ) {
+            break;
+        } else {
+            printk("\n Active CPU Id: %d", v_cpuid[i]);
+        }
+    }
+    
+    
+    printk("andser")
+    for(int i = 0; i < MAX_VM_COUNT; i++) {
+        // per cup tota exit
+        long sum = (vmextcntr_exception_nmis[i] + ...);
+        ava =     sum/(entry - exit)
 
+        p
+    }
+    
+    
+    for(int i = 0; i < MAX_VM_COUNT; i++) {
+        
+        if(i == 0 ){
+            //vmextcntr_io_instructions
+            printk("\n vmextcntr_cr_accesss Total: %d", vmextcntr_cr_accesss[i]);
+        } else {
+            
+            if (v_cpuid[i] == 0) {
+                break;
+            } else {
+                printk("\n vmextcntr_cr_accesss Total: %d", vmextcntr_cr_accesss[i]);
+            }
+        }
+        
+    }
+    
+    for(int i = 0; i < MAX_VM_COUNT; i++) {
+        
+        if(i == 0 ){
+            //vmextcntr_io_instructions
+            printk("\n vmextcntr_io_instructions Total: %d", vmextcntr_io_instructions[i]);
+        } else {
+            
+            if (v_cpuid[i] == 0) {
+                break;
+            } else {
+                printk("\n vmextcntr_io_instructions Total: %d", vmextcntr_io_instructions[i]);
+            }
+        }
+        
+    }
+    
+    
+    
+    
+    
 	printk("\nHere are the various VM Exit Counts:");
 
 	printk("\nVMEXTCNT_EXCEPTION_NMI:");
